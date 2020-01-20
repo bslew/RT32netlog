@@ -13,6 +13,7 @@ def UDPserver(host,port,log):
     
     s = socket(AF_INET, SOCK_DGRAM)
     s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+    s.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
     s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
     s.bind((host, int(port)))
     while 1:
