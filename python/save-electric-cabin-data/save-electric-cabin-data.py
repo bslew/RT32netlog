@@ -113,7 +113,7 @@ USAGE
         ''')
         parser.add_argument("--test1", dest="test1", action='store_true', help="test run 1")
         parser.add_argument("--storeDB", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='True')
-        parser.add_argument("--storeFile", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='True')
+        parser.add_argument("--storeFile", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='False')
 #         parser.add_argument("--test", dest="test", action='store_true', help="test run")
         parser.add_argument("--setup", dest="setup", action='store_true', help="initialize configuration file")
         parser.add_argument("-o", "--outfile", dest="outfile", help='Output file name [default: %(default)s]', metavar="VALUE", type=str, nargs='?', default='WS800UMB.dat')
