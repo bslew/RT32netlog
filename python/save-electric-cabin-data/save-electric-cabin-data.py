@@ -142,23 +142,30 @@ USAGE
         if args.setup:
             cfg=None
             if os.path.isfile(config_file.configFile):
-                log.warning('Config file ({}) already exists. Will not overwrite.')
+                log.warning('Config file ({}) already exists. Will not overwrite.'.format(config_file.configFile))
                 log.warning('Remove config file manually and run this program again if you want to start a fresh config file.')
                 cfg=config_file.readConfigFile()
+
+                log.info("Configuring DB table")
+                db = storage.Telectric_sqldb(host=cfg['DB']['host'], port=cfg['DB']['port'],
+                                     db=cfg['DB']['db'],table=cfg['DB']['table'],
+                                     user=cfg['DB']['user'],
+                                     passwd=cfg['DB']['passwd'],
+                                     logger=log,
+                                     )
+                db.connect()
+                if verbose>0:
+                    log.info("DB connected: {}".format(db.connected()))
+                db.create_table()
+            
             else:
                 cfg=config_file.writeConfigFile(config_file.configFile)
                 log.info("Configuration done. ")
-            db = storage.Telectric_sqldb(host=cfg['DB']['host'], port=cfg['DB']['port'],
-                                 db=cfg['DB']['db'],table=cfg['DB']['table'],
-                                 user=cfg['DB']['user'],
-                                 passwd=cfg['DB']['passwd'],
-                                 )
-            db.connect()
-            if verbose>0:
-                log.info("DB connected: {}".format(db.connected()))
-            db.create_table()
+                log.info("Now you need to edit the db password in config file ({}) and run the setup again to create DB table.".format(config_file.configFile))
+                log.info("Remember to chmod 600 {}* after you edit the file.".format(config_file.configFile))
             
-
+            
+            
         if args.serverUDP:
             cfg=config_file.readConfigFile()
             host=cfg['ELECTRIC_CABIN_DATA']['udp_ip'].split(',')[0]
