@@ -49,7 +49,7 @@ setup(name='RT32netlog',
                   'RT32logging/database',
                   ],
       scripts=['python/save-electric-cabin-data/save-electric-cabin-data.py',
-               'python/save-electric-cabin-data/save-focus-box-meteo.py',
+               'python/save-focus-box-meteo/save-focus-box-meteo.py',
                ],
       classifiers=[
         "Development Status :: 3 - Alpha",
