@@ -15,15 +15,20 @@ def writeConfigFile(configFile):
     config['ELECTRIC_CABIN_DATA'] = {
         'udp_port' : 33051, 
         'udp_ip' : '192.168.1.255',
+        'table' : 'electric_cabin',
     }
 
+    config['FOCUS_CABIN_DATA'] = {
+        'udp_port' : 33052, 
+        'udp_ip' : '192.168.1.255',
+        'table' : 'focus_cabin',
+    }
     
     config['DB'] = {'host' : '192.168.1.8',
                     'port' : 3306,
                     'user' : 'kra', 
                     'passwd' : 'passwd',
                     'db' : 'kra',
-                    'table' : 'electric_cabin',
                  }
 
 

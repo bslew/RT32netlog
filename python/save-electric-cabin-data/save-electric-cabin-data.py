@@ -148,7 +148,7 @@ USAGE
 
                 log.info("Configuring DB table")
                 db = storage.Telectric_sqldb(host=cfg['DB']['host'], port=cfg['DB']['port'],
-                                     db=cfg['DB']['db'],table=cfg['DB']['table'],
+                                     db=cfg['DB']['db'],table=cfg['ELECTRIC_CABIN_DATA']['table'],
                                      user=cfg['DB']['user'],
                                      passwd=cfg['DB']['passwd'],
                                      logger=log,
@@ -174,7 +174,7 @@ USAGE
 
             if args.storeDB:
                 db = storage.Telectric_sqldb(host=cfg['DB']['host'], port=cfg['DB']['port'],
-                                     db=cfg['DB']['db'],table=cfg['DB']['table'],
+                                     db=cfg['DB']['db'],table=cfg['ELECTRIC_CABIN_DATA']['table'],
                                      user=cfg['DB']['user'], 
                                      passwd=cfg['DB']['passwd'],
                                      logger=log)

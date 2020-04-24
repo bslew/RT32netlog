@@ -233,3 +233,47 @@ class Telectric_sqldb(sqldb):
 
         return self.cols,data
             
+
+class FocusBoxMeteo_sqldb(Telectric_sqldb):
+    '''
+    Class for mySQL database communication to manipulate focus box cabin meteo data.
+    
+    '''
+    def __init__(self,host,port,db,table,user,passwd, **kwargs):
+        super().__init__(host,port,db,table,user,passwd, **kwargs)
+        self.host=host
+        self.port=port
+        self.dbname=db
+        self.table=table
+        self.user=user
+        self.passwd=passwd
+        self.db=None
+        self.cur=None
+        
+        self.cols=[]
+        self.cols.append('datetime')
+        self.cols.append('T')
+        self.cols.append('P')
+        self.cols.append("RH")
+        
+    def create_table(self):
+        '''
+        '''
+        
+        sql="CREATE TABLE if not exists %s (id integer UNSIGNED AUTO_INCREMENT, " % self.table
+        sql+="dt datetime COMMENT 'UTC DATE AND TIME',"
+        sql+="RH float COMMENT 'relative humidity [%]',"
+        sql+="T float COMMENT 'temperature [degC]',"
+        sql+="P float COMMENT 'pressure [mbar]',"
+        sql+="PRIMARY KEY (`id`))"
+#         print(sql)
+        try:
+#             self.db.query(sql)
+            self.cur.execute(sql)
+            self.db.commit()
+            self.logger.info("Created mysql table")
+        except:
+            self.db.rollback()
+            sys.stderr.write(str(sys.exc_info()[1])+'\n')
+
+            
