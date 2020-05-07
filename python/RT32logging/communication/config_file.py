@@ -19,7 +19,7 @@ def writeConfigFile(configFile):
     }
 
     config['FOCUS_CABIN_DATA'] = {
-        'udp_port' : 33052, 
+        'udp_port' : 33060, 
         'udp_ip' : '192.168.1.255',
         'table' : 'focus_cabin',
     }
