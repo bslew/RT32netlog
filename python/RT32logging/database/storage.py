@@ -11,7 +11,7 @@ import MySQLdb
 from RT32logging.communication import config_file
 from RT32logging import logger
 
-def save_to_file(fname,data_dict):
+def save_to_file(fname,data_dict, logger=None):
     '''
     save a dictionary to CSV file
     
@@ -30,9 +30,17 @@ def save_to_file(fname,data_dict):
     if os.path.isfile(fname):
         header=False
     
-    with open(fname,"a") as f:
-        df=pd.DataFrame.from_dict(data=data_dict_tmp, orient='columns')
-        df.to_csv(f, sep='\t', encoding='utf-8',header=header)
+    try:
+    
+        with open(fname,"a") as f:
+            df=pd.DataFrame.from_dict(data=data_dict_tmp, orient='columns')
+            df.to_csv(f, sep='\t', encoding='utf-8',header=header)
+    except:
+        sys.stderr.write(str(sys.exc_info()[1])+'\n')
+        if logger!=None:
+            logger.error('Cannot write to file {}'.format(fname))
+            logger.error(str(sys.exc_info()[1]))
+
 
 def merge_two_dicts(x, y):
     z = x.copy()   # start with x's keys and values

@@ -20,6 +20,12 @@ import sys
 import os
 import datetime
 
+'''
+FOR EXTRA MODULES LOCATED IN LOCAL DIRECTORIES 
+for runs started without installing the package
+'''
+sys.path.append(os.sep.join(os.path.abspath(__file__).split(os.sep)[:-2]))  
+
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
@@ -112,8 +118,8 @@ USAGE
         run in server mode -- starts collecting data from UDP packages and storing them to mysql db.
         ''')
         parser.add_argument("--test1", dest="test1", action='store_true', help="test run 1")
-        parser.add_argument("--storeDB", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='True')
-        parser.add_argument("--storeFile", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='False')
+        parser.add_argument("--saveToDB", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='True')
+        parser.add_argument("--saveToFile", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='False')
 #         parser.add_argument("--test", dest="test", action='store_true', help="test run")
         parser.add_argument("--setup", dest="setup", action='store_true', help="initialize configuration file")
         parser.add_argument("-o", "--outfile", dest="outfile", help='Output file name [default: %(default)s]', metavar="VALUE", type=str, nargs='?', default='WS800UMB.dat')
@@ -131,10 +137,16 @@ USAGE
         log = logger.get_logging('Electric cabin',logfile)
         log.info(__file__+": === NEW RUN ===")
 
+        cfg=config_file.readConfigFile()
+        configSection='ELECTRIC_CABIN_DATA'
+        saveToDB=str2bool(config_file.getOption('saveToDB', cfg,configSection,args.saveToDB))
+            
+
         if verbose > 0:
             log.debug("Verbose mode on")
-            log.debug("args.storeDB: {}".format(args.storeDB))
-            log.debug("args.storeFile: {}".format(args.storeFile))
+            log.debug("args.saveToDB: {}".format(args.saveToDB))
+            log.debug("will save to DB: {}".format(saveToDB))
+            log.debug("args.saveToFile: {}".format(args.saveToFile))
             log.debug('Log file: {}'.format(logfile))
 
 
@@ -165,14 +177,17 @@ USAGE
                 log.info("Remember to chmod 600 {}* after you edit the file.".format(config_file.configFile))
             
             
-            
         if args.serverUDP:
-            cfg=config_file.readConfigFile()
-            host=cfg['ELECTRIC_CABIN_DATA']['udp_ip'].split(',')[0]
-            port=cfg['ELECTRIC_CABIN_DATA']['udp_port'].split(',')[0]
+            try:
+                host=cfg[configSection]['udp_ip'].split(',')[0]
+                port=cfg[configSection]['udp_port'].split(',')[0]
+            except KeyError:
+                log.error('There is no {} block in the configuration file {} or some of its entries are missing.'.format(configSection,config_file.configFile))
+                log.info('This program will not work without the information from that block.')
+                sys.exit(1)
             db=None
 
-            if args.storeDB:
+            if saveToDB:
                 db = storage.Telectric_sqldb(host=cfg['DB']['host'], port=cfg['DB']['port'],
                                      db=cfg['DB']['db'],table=cfg['ELECTRIC_CABIN_DATA']['table'],
                                      user=cfg['DB']['user'], 
@@ -188,9 +203,9 @@ USAGE
                 if args.verbose:
                     log.debug('New datagram')
                     log.debug('{}'.format(dict2str(readout)))
-                if args.storeFile:
-                    storage.save_to_file(args.outfile,readout)
-                if args.storeDB:
+                if args.saveToFile:
+                    storage.save_to_file(args.outfile,readout,log)
+                if saveToDB:
                     db.store(readout)
 
 

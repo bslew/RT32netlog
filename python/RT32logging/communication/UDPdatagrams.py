@@ -56,14 +56,70 @@ def convert_UDP_datagram_focus_cabin(data):
             d['RH']=v
         
     if 'T' not in d.keys():
-        d=None
+        d['T']=None
     if 'RH' not in d.keys():
-        d=None
+        d['RH']=None
     if 'P' not in d.keys():
-        d=None
+        d['P']=None
     
     
     dtstr=datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     d['dt']=dtstr
     
     return d
+
+def convert_UDP_datagram(data,required_keys, output_keys):
+    '''
+    convert data string to key value dictionary
+    The function checks if all required keys are present
+    
+    '''
+    d={}
+    extra_keys=[]
+    present_keys=[]
+    missing_keys=[]
+    status={'result': True, 'comments' :[] }
+
+    for param in data.decode().split(','):
+        kv=param.split('=')
+        k=kv[0]
+        v=kv[1]
+        if k in required_keys:
+            d[output_keys[required_keys.index(k)]]=v
+            present_keys.append(k)
+        else:
+            extra_keys.append(k)
+
+    for k in required_keys:
+        if k not in present_keys:
+            missing_keys.append(k)
+
+    for k in output_keys:
+        if k not in d.keys():
+            d[k]=None
+    
+    dtstr=datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    d['dt']=dtstr
+#     status=verify_UDP_datagram_dict(d)
+
+    if len(extra_keys)>0:
+        status['comments'].append('Extra keys: '+','.join(x for x in extra_keys))
+    if len(missing_keys)>0:
+        status['comments'].append('Missing keys: '+','.join(x for x in missing_keys))
+        status['result']=False
+    
+    
+    return d,status
+
+def verify_UDP_datagram_dict(d):
+    '''
+    '''
+    status={'result': True, 'comments' :[] }
+    
+    
+    for k,v in d.items():
+        if v==None:
+            status['comments'].append('Missing key {}'.format(k))
+            status['result']=False
+        
+    return status

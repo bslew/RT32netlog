@@ -19,6 +19,15 @@ It defines classes_and_methods
 import sys
 import os
 import datetime
+import json
+from distutils import util 
+
+'''
+FOR EXTRA MODULES LOCATED IN LOCAL DIRECTORIES 
+for runs started without installing the package
+'''
+sys.path.append(os.sep.join(os.path.abspath(__file__).split(os.sep)[:-2]))  
+sys.path.append(os.sep.join(os.path.abspath(__file__).split(os.sep)[:-1]))  
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
@@ -28,43 +37,18 @@ from RT32logging.communication import UDPdatagrams
 
 from RT32logging.database import storage
 from RT32logging import logger, server
+from RT32logging.common import commons
+
         
 __all__ = []
 __version__ = 0.1
 __date__ = '2020-01-20'
 __updated__ = '2020-01-20'
 
-DEBUG = 0
+DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
 
-class CLIError(Exception):
-    '''Generic exception to raise and log different fatal errors.'''
-    def __init__(self, msg):
-        super(CLIError).__init__(type(self))
-        self.msg = "E: %s" % msg
-    def __str__(self):
-        return self.msg
-    def __unicode__(self):
-        return self.msg
-
-def dict2str(d):
-    if d==None:
-        return 'None'
-    s=''
-    for key,val in sorted(d.items()):
-        s=s+'{}={},'.format(key,val)
-    return s
-    
-def str2bool(v):
-    if isinstance(v, bool):
-       return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise ArgumentTypeError('Boolean value expected.')
 
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
@@ -99,43 +83,34 @@ show examples how to use the program...
 USAGE
 ''' % (program_shortdesc, str(__date__))
 
+    program_log_title='FocusBox cabin'
+    
+    program_module_name='FOCUS_CABIN_DATA'
+
+
     try:
         # Setup argument parser
-        parser = ArgumentParser(description=program_license, epilog=program_epilog, formatter_class=RawDescriptionHelpFormatter)
-        parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]", default=0)
-#         parser.add_argument("-i", "--include", dest="include", help="only include paths matching this regex pattern. Note: exclude is given preference over include. [default: %(default)s]", metavar="RE" )
-#         parser.add_argument("-e", "--exclude", dest="exclude", help="exclude paths matching this regex pattern. [default: %(default)s]", metavar="RE" )
-        parser.add_argument('-V', '--version', action='version', version=program_version_message)
-#         parser.add_argument(dest="paths", help="paths to folder(s) with source file(s) [default: %(default)s]", metavar="path", nargs='+')
-
-        parser.add_argument("--serverUDP", dest="serverUDP", action='store_true', help='''
-        run in server mode -- starts collecting data from UDP packages and storing them to mysql db.
-        ''')
-        parser.add_argument("--test1", dest="test1", action='store_true', help="test run 1")
-        parser.add_argument("--storeDB", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='True')
-        parser.add_argument("--storeFile", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='False')
-#         parser.add_argument("--test", dest="test", action='store_true', help="test run")
-        parser.add_argument("--setup", dest="setup", action='store_true', help="initialize configuration file")
-        parser.add_argument("-o", "--outfile", dest="outfile", help='Output file name [default: %(default)s]', metavar="VALUE", type=str, nargs='?', default='WS800UMB.dat')
-
+        parser=commons.getParser(program_license,program_epilog,program_version_message)
         # Process arguments
         args = parser.parse_args()
-
-#         paths = args.paths
         verbose = args.verbose
-#         recurse = args.recurse
-#         inpat = args.include
-#         expat = args.exclude
 
         logfile=os.environ['HOME']+os.path.sep+__file__+'.log'
-        log = logger.get_logging('FocusBox cabin',logfile)
+        log = logger.get_logging(program_log_title,logfile)
         log.info(__file__+": === NEW RUN ===")
 
-        if verbose > 0:
+        configSection=program_module_name
+        cfg=config_file.readConfigFile()
+        args.saveToDB=commons.str2bool(config_file.getOption('saveToDB', cfg,configSection,args.saveToDB))
+
+        if verbose > 1:
             log.debug("Verbose mode on")
-            log.debug("args.storeDB: {}".format(args.storeDB))
-            log.debug("args.storeFile: {}".format(args.storeFile))
+            log.debug("args.saveToDB: {}".format(args.saveToDB))
+#             log.debug("will save to DB: {}".format(saveToDB))
+            log.debug("args.saveToFile: {}".format(args.saveToFile))
             log.debug('Log file: {}'.format(logfile))
+#             for x in json.loads(cfg[program_module_name]['required_keys']):
+#                 print(x)
 
 
 
@@ -148,7 +123,7 @@ USAGE
 
                 log.info("Configuring DB table")
                 db = storage.FocusBoxMeteo_sqldb(host=cfg['DB']['host'], port=cfg['DB']['port'],
-                                     db=cfg['DB']['db'],table=cfg['FOCUS_CABIN_DATA']['table'],
+                                     db=cfg['DB']['db'],table=cfg[configSection]['table'],
                                      user=cfg['DB']['user'],
                                      passwd=cfg['DB']['passwd'],
                                      logger=log,
@@ -164,35 +139,12 @@ USAGE
                 log.info("Now you need to edit the db password in config file ({}) and run the setup again to create DB table.".format(config_file.configFile))
                 log.info("Remember to chmod 600 {}* after you edit the file.".format(config_file.configFile))
             
-            
-            
+                        
         if args.serverUDP:
-            cfg=config_file.readConfigFile()
-            host=cfg['FOCUS_CABIN_DATA']['udp_ip'].split(',')[0]
-            port=cfg['FOCUS_CABIN_DATA']['udp_port'].split(',')[0]
-            db=None
-
-            if args.storeDB:
-                db = storage.FocusBoxMeteo_sqldb(host=cfg['DB']['host'], port=cfg['DB']['port'],
-                                     db=cfg['DB']['db'],table=cfg['FOCUS_CABIN_DATA']['table'],
-                                     user=cfg['DB']['user'], 
-                                     passwd=cfg['DB']['passwd'],
-                                     logger=log)
-                db.connect()
-
-            for data in server.UDPserver(host,port,log):
-                readout=UDPdatagrams.convert_UDP_datagram_focus_cabin(data)
-                
-                if args.test1:
-                    dataRef={}
-                if args.verbose:
-                    log.debug('New datagram')
-                    log.debug('{}'.format(dict2str(readout)))
-                if args.storeFile:
-                    storage.save_to_file(args.outfile,readout)
-                if args.storeDB:
-                    db.store(readout)
-
+            keys={'required' : json.loads(cfg[program_module_name]['required_keys']), 
+                  'target' : json.loads(cfg[program_module_name]['db_keys'])}
+#             server.startServerUDP(cfg, configSection, args, storage.FocusBoxMeteo_sqldb,UDPdatagrams.convert_UDP_datagram_focus_cabin,keys,log)
+            server.startServerUDP(cfg, configSection, args, storage.FocusBoxMeteo_sqldb,UDPdatagrams.convert_UDP_datagram,keys,log)
 
         return 0
     except KeyboardInterrupt:
