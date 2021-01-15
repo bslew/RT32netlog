@@ -7,11 +7,11 @@ User=meteo
 # The configuration file application.properties should be here:
 
 #change this to your workspace
-WorkingDirectory=/home/meteo/struct_temp
+WorkingDirectory=/home/meteo/focusbox
 
 #path to executable. 
 #executable is a bash script which calls jar fileExecStart=/home/ubuntu/workspace/my-webapp
-ExecStart=/usr/local/bin/save-UDPdata-generic-module.py --serverUDP -m STRUCT_TEMP
+ExecStart=/usr/local/bin/save-UDPdata-generic-module.py --serverUDP -m FOCUS_CABIN_DATA
 #Requires=ntpdate
 
 SuccessExitStatus=143
