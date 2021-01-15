@@ -1,4 +1,6 @@
 mysqlclient
 sockets
 redis
-redis-namespace
+#redis-namespace
+pandas
+
