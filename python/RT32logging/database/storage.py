@@ -10,6 +10,7 @@ import datetime
 import MySQLdb
 from RT32logging.communication import config_file
 from RT32logging import logger
+from RT32logging.common import commons
 
 
 def save_to_redis(rcon, data_dict,logger=None):
@@ -30,6 +31,10 @@ def save_to_redis(rcon, data_dict,logger=None):
 #         rcon['con'].set(rcon['pref']+'::last::'+k,v)
         rcon['con'].lpush(rcon['pref']+'::last::'+k,v)
         rcon['con'].ltrim(rcon['pref']+'::last::'+k,0,int(N)-1)
+        
+    # store the whole thing
+    rcon['con'].lpush(rcon['pref']+'::last::_raw',commons.dict2str(data_dict))
+    rcon['con'].ltrim(rcon['pref']+'::last::_raw',0,int(N)-1)
 
 def save_to_file(fname,data_dict, logger=None):
     '''
