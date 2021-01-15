@@ -51,6 +51,8 @@ setup(name='RT32netlog',
                   ],
       scripts=['python/save-electric-cabin-data/save-electric-cabin-data.py',
                'python/save-focus-box-meteo/save-focus-box-meteo.py',
+               'python/progs/save-rt32-struct-temp/save-rt32-struct_temp.py',
+               'python/progs/save-UDPdata-generic-module.py',
                ],
       classifiers=[
         "Development Status :: 3 - Alpha",

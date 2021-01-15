@@ -1,3 +1,5 @@
 /build/
 /.pydevproject
 /.project
+/venv/
+/dist/

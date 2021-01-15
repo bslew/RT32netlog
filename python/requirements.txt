@@ -1,0 +1,4 @@
+mysqlclient
+sockets
+redis
+redis-namespace

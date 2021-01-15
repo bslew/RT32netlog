@@ -50,6 +50,18 @@ def startServerUDP(cfg,moduleName,args,sqldbProxy,datagramConverter,keys,log):
                          logger=log)
         db.connect()
 
+    rcon=None
+    if args.saveToRedis:
+        import redis
+#         from redis_namespace import StrictRedis
+# 
+#         rcon = redis.StrictRedis()
+#         redis = StrictRedis(namespace=cfg['STRUCT_TEMP']['redisNamespace'])
+        rcon=redis.Redis(host=cfg['REDIS']['host'], port=cfg['REDIS']['port'],
+                         db=cfg['REDIS']['db'])
+        redis_con={'con' : rcon, 
+                   'pref' : cfg[moduleName]['redisNamespace'],
+                   'maxelem' : cfg['REDIS']['list_max_elem']}
         
     for data in UDPserver(host,port,log):
         
@@ -69,6 +81,8 @@ def startServerUDP(cfg,moduleName,args,sqldbProxy,datagramConverter,keys,log):
         if status['result']:
             if args.saveToFile:
                 storage.save_to_file(args.outfile,readout,log)
+            if args.saveToRedis:
+                storage.save_to_redis(redis_con,readout,log)
             if args.saveToDB:
                 db.store(readout)
         else:

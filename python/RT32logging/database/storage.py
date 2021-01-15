@@ -11,6 +11,26 @@ import MySQLdb
 from RT32logging.communication import config_file
 from RT32logging import logger
 
+
+def save_to_redis(rcon, data_dict,logger=None):
+    '''
+    save dictionary key and values to redis server
+    
+    parameters
+    ----------
+        rcon - dictionary {
+            'con' : instance of redis.Redis class, 
+            'pref' : prefix used to namespace everything,
+            'maxelem' : maximal number of elements in lists} 
+        data_dict - dict to be saved
+    '''
+    N=rcon['maxelem']
+    for k,v in data_dict.items():
+#         print(rcon['pref']+'::'+k)
+#         rcon['con'].set(rcon['pref']+'::last::'+k,v)
+        rcon['con'].lpush(rcon['pref']+'::last::'+k,v)
+        rcon['con'].ltrim(rcon['pref']+'::last::'+k,0,int(N)-1)
+
 def save_to_file(fname,data_dict, logger=None):
     '''
     save a dictionary to CSV file
@@ -20,21 +40,24 @@ def save_to_file(fname,data_dict, logger=None):
     '''
     import pandas as pd
     
-    data_dict_tmp={}
-    for k,v in data_dict.items():
+    data_dict_tmp=data_dict.copy()
+    for k,v in data_dict.items(): # what's the reason behind this ? - we need backward compatibility check here
         if isinstance(data_dict[k],list):
+            data_dict_tmp[k]=list([v])
+        else:
             data_dict_tmp[k]=list([v])
     
 #     print(data_dict)
     header=True
     if os.path.isfile(fname):
         header=False
-    
+
     try:
     
         with open(fname,"a") as f:
             df=pd.DataFrame.from_dict(data=data_dict_tmp, orient='columns')
-            df.to_csv(f, sep='\t', encoding='utf-8',header=header)
+#             print(df)
+            df.to_csv(f, sep='\t', encoding='utf-8',header=header, index=False)
     except:
         sys.stderr.write(str(sys.exc_info()[1])+'\n')
         if logger!=None:
@@ -51,7 +74,7 @@ def merge_two_dicts(x, y):
 
 
 class sqldb:
-    def __init__(self,host,port,dbname,table,user,passwd, **kwargs):
+    def __init__(self,host,port,dbname,table,user,passwd, cols=[], **kwargs):
         self.host=host
         self.port=port
         self.dbname=dbname
@@ -72,7 +95,7 @@ class sqldb:
         '''
         Column names in mySQL database 
         '''
-        self.cols=[]
+        self.cols=cols
 
 
     def connect(self):
@@ -94,7 +117,22 @@ class sqldb:
         '''
         create DB table
         '''
-        pass
+        sql="CREATE TABLE if not exists %s (id integer UNSIGNED AUTO_INCREMENT, " % self.table
+        sql+="dt datetime COMMENT 'UTC DATE AND TIME',"
+        for col in self.cols:
+            sql+="{} float COMMENT 'TBD',".format(col)
+        sql+="PRIMARY KEY (`id`))"
+#         print(sql)
+        try:
+#             self.db.query(sql)
+            self.cur.execute(sql)
+            self.db.commit()
+            self.logger.info("Created mysql table")
+        except:
+            self.db.rollback()
+            sys.stderr.write(str(sys.exc_info()[1])+'\n')
+
+            
         
 #         sql="CREATE TABLE %s (id integer UNSIGNED AUTO_INCREMENT, " % self.table
 #         sql+="date date COMMENT 'UTC DATE',"
@@ -123,7 +161,27 @@ class sqldb:
             tuple: a list with column names, data
         
         '''
-        pass
+        d1=dt1.strftime('%Y-%m-%d')
+        d2=dt2.strftime('%Y-%m-%d')
+        sql='SELECT '
+        for col in self.cols:
+            sql+=col+','
+        sql=sql[:-1]
+        sql+=' FROM %s WHERE datetime>="%s" AND datetime<"%s" ' % (self.table,d1,d2)
+        sql+=' AND id%%%i=0 ' % step
+#         print(sql)
+        data=None
+        try:
+            self.cur.execute(sql)
+            data=self.cur.fetchall()
+#             for row in self.cur.fetchall():
+#                 print(row)
+                
+        except:
+            sys.stderr.write(str(sys.exc_info()[1])+'\n')
+            self.logger.error(str(sys.exc_info()[1]))
+
+        return self.cols,data
     
 
     def store(self,data):
@@ -159,6 +217,7 @@ class sqldb:
             else:
                 self.logger.error('Not connected to mySQL db')
 #             pass
+            raise
         
 
 
@@ -182,6 +241,7 @@ class Telectric_sqldb(sqldb):
         self.cols.append('datetime')
         self.cols.append('T')
         self.cols.append("RH")
+        self.cols.append('P')
         
     def create_table(self):
         '''
@@ -192,6 +252,7 @@ class Telectric_sqldb(sqldb):
         sql+="dt datetime COMMENT 'UTC DATE AND TIME',"
         sql+="RH float COMMENT 'relative humidity [%]',"
         sql+="T float COMMENT 'temperature [degC]',"
+        sql+="P float COMMENT 'pressure [mbar]',"
         sql+="PRIMARY KEY (`id`))"
 #         print(sql)
         try:

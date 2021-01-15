@@ -6,6 +6,9 @@ Created on Jan 23, 2019
 import configparser
 import os,sys
 import json
+# import csv
+# from io import StringIO
+import re
 
 configFile=os.environ['HOME']+os.sep+'.RT32netlog.ini'
 
@@ -45,8 +48,43 @@ def writeConfigFile(configFile):
         
     return config
 
+
+class RT32netlogParser(configparser.ConfigParser):
+    def __init__(self):
+        super().__init__()
+#         list_keys=['db_keys']
+    
+        
+    def getlist(self, section_name,option_name):
+#         for lk in list_keys:
+#             for s in config.sections():
+#                 if lk in config[s].keys():
+#                     print(config[s][lk])
+#                     print(type(config[s][lk]))
+#                     config[s][lk]=csv.reader(config[s][lk], delimiter=',')
+        val=self.get(section_name,option_name)
+        if not val.startswith('['):
+            raise "List should start with ["
+        if not val.endswith(']'):
+            raise "List should end with ]"
+#         print(val[1:-1])
+#         f=StringIO(val[1:-1])
+#         reader = csv.reader([val[1:-1]], delimiter=',')
+#         for r in reader:
+#             print('----')
+#             print(r)
+#         print('----')
+#         print('----')
+        chars_to_remove=['"']
+        rx = '[' + re.escape(''.join(chars_to_remove)) + ']'
+        l=[ re.sub(rx,'',x.strip()) for x in val[1:-1].split(',')]
+#         for it in l:
+#             print(it)
+        return l
+
 def readConfigFile():
-    config = configparser.ConfigParser()
+#     config = configparser.ConfigParser()
+    config = RT32netlogParser()
     configFile=os.environ['HOME']+os.sep+'.RT32netlog.ini'
     if os.path.isfile(configFile):
         print('Found configuration file: {}'.format(configFile))
@@ -62,6 +100,8 @@ def readConfigFile():
             configFile=os.environ['HOME']+os.sep+'.RT32netlog.ini'
             config=writeConfigFile(configFile)
             print("Generated config file in: {}".format(configFile))
+            
+
     return config
 
 
