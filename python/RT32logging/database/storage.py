@@ -5,7 +5,7 @@ Created on Jan 23, 2019
 '''
 
 import os,sys
-# import _mysql
+import numpy as np
 import datetime
 import MySQLdb
 from RT32logging.communication import config_file
@@ -35,6 +35,109 @@ def save_to_redis(rcon, data_dict,logger=None):
     # store the whole thing
     rcon['con'].lpush(rcon['pref']+'::last::_raw',commons.dict2str(data_dict))
     rcon['con'].ltrim(rcon['pref']+'::last::_raw',0,int(N)-1)
+
+
+def fetch_from_redis(rcon, key='_raw',from_idx=0,to_idx=-1):
+    '''
+        returns
+        -------
+            list of bytes containing serialized datagram dictionary
+    '''
+    return rcon['con'].lrange(rcon['pref']+'::last::'+key,from_idx,to_idx-1)
+
+
+class redissrv:
+    def __init__(self, rcon=None):
+        '''
+        '''
+        self.rcon=rcon
+        
+    def fetchLast(self):
+        '''
+        fetch last entry stored in redis and return as dictionary.
+        This intends to recover the UDP datagram structure temperarily stored
+        in redis. The namespace is defined by the connection name at 
+        initialization time.
+        
+        returns
+        -------
+            dictionary 
+        '''
+        raw=fetch_from_redis(self.rcon,'_raw',0,1)
+        raw=[x.decode() for x in raw]
+        
+        s2l=lambda s,sep: s.split(sep)
+    
+        raw=[ [s2l(y,'=') for y in s2l(x,',') if y!=''] for x in raw][0]
+        d={}
+        for k,v in raw:
+            d[k]=v
+            
+#         print(d)
+        return d
+    
+    def fetch(self,dt1,dt2,step=6,json_serializable=False):
+        '''
+        Fetch data from redis storage
+        
+        
+        parameters
+        ----------
+            dt1, dt2 - datetimes objects defining UTC date and time (space separated) 
+            
+            step - select every this row
+            json_serializable- if True, then datatime objects are converted back to strings
+                before returning.Default (False)
+            
+        returns:
+            tuple: a list with column names, data
+        
+        '''
+        raw=fetch_from_redis(self.rcon)
+        raw=[x.decode() for x in raw]
+        
+        '''
+        convert to list of strings
+        '''
+        s2l=lambda s,sep: s.split(sep)
+        
+        raw=[ [s2l(y,'=') for y in s2l(x,',') if y!=''] for x in raw]
+#         print(raw[0])
+        d={}
+        keys=[]
+        for entry in raw[0]:
+            try:
+                k,_=entry
+                d[k]=[]
+            except:
+                print(entry)
+                raise
+        for row in raw:
+            for k,v in row:
+                if k=='dt':
+                    d[k].append(datetime.datetime.strptime(v,'%Y-%m-%d %H:%M:%S'))
+                else:
+                    d[k].append(float(v))                        
+
+
+        
+        '''
+        select data by dates
+        '''
+        mask=np.logical_and(np.array(d['dt'])>=dt1,np.array(d['dt'])<=dt2)
+#         print(mask)
+        
+        dsel={}
+        for k,v in d.items():
+            dsel[k]=list(np.array(d[k])[mask][::step])
+        
+        '''
+        convert datetime objects back to strings
+        '''
+        if json_serializable:
+            dsel['dt']=[datetime.datetime.strftime(x,'%Y-%m-%d %H:%M:%S') for x in dsel['dt'] ]
+        return dsel
+
 
 def save_to_file(fname,data_dict, logger=None):
     '''
