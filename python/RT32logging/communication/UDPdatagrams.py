@@ -82,13 +82,15 @@ def convert_UDP_datagram(data,required_keys, output_keys):
 
     for param in data.decode().split(','):
         kv=param.split('=')
-        k=kv[0]
-        v=kv[1]
-        if k in required_keys:
-            d[output_keys[required_keys.index(k)]]=v
-            present_keys.append(k)
-        else:
-            extra_keys.append(k)
+
+        if len(kv)==2:
+            k=kv[0]
+            v=kv[1]
+            if k in required_keys:
+                d[output_keys[required_keys.index(k)]]=v
+                present_keys.append(k)
+            else:
+                extra_keys.append(k)
 
     for k in required_keys:
         if k not in present_keys:
