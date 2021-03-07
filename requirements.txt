@@ -1,6 +1,5 @@
 mysqlclient
 sockets
 redis
-#redis-namespace
 pandas
 

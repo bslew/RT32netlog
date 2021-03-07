@@ -1,8 +1,8 @@
 # GENERAL
 
-This package implements saving UDP datagrams from localnetwork to mySQL database.
+This package implements saving UDP datagrams from localnetwork to mySQL database and other data storages.
 
-#CONTENTS:
+# CONTENTS:
 
 	* RT32netlog package contains daemons working as ubuntu service at galaxy. 
 	  They read UDP datagrams and stores them to mySQL database on galaxy
@@ -11,23 +11,33 @@ This package implements saving UDP datagrams from localnetwork to mySQL database
 
 # DOWNLOAD
 
-`git ssh://gitolite@galaxy.astro.uni.torun.pl/RT32netlog`
+```sh
+git ssh://gitolite@galaxy.astro.uni.torun.pl/RT32netlog
+```
 
 # BUILD
-`python3 setup.py build`
+```sh
+python3 setup.py build
+```
 
 # INSTALL
 
 ## Installation general
 
-`sudo python3 setup.py install`
+```sh
+sudo python3 setup.py install
+```
 
 
 To install without sources
 
-`python3 setup.py bdist_egg --exclude-source-files`
+```sh
+python3 setup.py bdist_egg --exclude-source-files
+```
 
-`sudo python3 setup.py install`
+```sh
+sudo python3 setup.py install
+```
 
 The data acquisition daemon can work as a system service controlled via systemctl.
 The package is shipped with save-electric_cabin-data.service file which should be placed in the correct

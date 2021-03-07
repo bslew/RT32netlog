@@ -21,7 +21,7 @@ def save_to_redis(rcon, data_dict,logger=None):
     ----------
         rcon - dictionary {
             'con' : instance of redis.Redis class, 
-            'pref' : prefix used to namespace everything,
+            'pref' : prefix used to access the required namespace,
             'maxelem' : maximal number of elements in lists} 
         data_dict - dict to be saved
     '''
@@ -64,7 +64,10 @@ class redissrv:
             dictionary 
         '''
         raw=fetch_from_redis(self.rcon,'_raw',0,1)
+        print(raw)
         raw=[x.decode() for x in raw]
+        if len(raw)==0:
+            return {}
         
         s2l=lambda s,sep: s.split(sep)
     

@@ -10,6 +10,8 @@ def read(fname):
 os.environ["CC"] = "c++" 
 os.environ["CXX"] = "c++"
 
+required_packages=read('requirements.txt').split()
+
 # # Common flags for both release and debug builds.
 # extra_compile_args = sysconfig.get_config_var('CFLAGS').split()
 # extra_compile_args += ["-std=c++11", "-Wall", "-Wextra"]
@@ -34,15 +36,14 @@ os.environ["CXX"] = "c++"
 #     )
 
 setup(name='RT32netlog',
-      version='1.0',
-      description='Network UDP datagrams to mysql db saver for TCfA UMK',
+      version='1.0.1',
+      description='Capture and store UDP datagrams',
       long_description=read('README.md'),
+      long_description_content_type='text/markdown',
       author='Bartosz Lew',
       author_email='bartosz.lew@umk.pl',
       url='',
-      install_requires=[
-#           'minimalmodbus',
-      ],      
+      install_requires=required_packages,      
       package_dir = {'': 'python'},
       packages = ['RT32logging',
                   'RT32logging/communication',
