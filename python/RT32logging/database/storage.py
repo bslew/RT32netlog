@@ -30,7 +30,7 @@ def save_to_redis(rcon, data_dict,logger=None):
     for k,v in data_dict.items():
 #         print(rcon['pref']+'::'+k)
 #         rcon['con'].set(rcon['pref']+'::last::'+k,v)
-        rcon['con'].lpush(rcon['pref']+'::last::'+k,v)
+        rcon['con'].lpush(rcon['pref']+'::last::'+k,str(v))
         rcon['con'].ltrim(rcon['pref']+'::last::'+k,0,int(N)-1)
         
     # store the whole thing
