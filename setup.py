@@ -36,7 +36,7 @@ required_packages=read('requirements.txt').split()
 #     )
 
 setup(name='RT32netlog',
-      version='1.0.1',
+      version='1.2.0',
       description='Capture and store UDP datagrams',
       long_description=read('README.md'),
       long_description_content_type='text/markdown',

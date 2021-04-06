@@ -6,6 +6,8 @@ Created on Jan 20, 2020
 from socket import *
 import datetime
 import sys,os
+import json
+import redis
 '''
 FOR EXTRA MODULES LOCATED IN LOCAL DIRECTORIES 
 for runs started without installing the package
@@ -18,8 +20,17 @@ from communication import UDPdatagrams
 
 
 
-def UDPserver(host,port,log):
+def UDPserver(host,port,log,dgram_converter,**kwargs):
     log.info("Listening on udp {}:{}".format(host, port))
+
+    keys=kwargs['keys']
+    moduleName=kwargs['moduleName']
+    cfg=kwargs['cfg']
+    args=kwargs['args']
+#     resend_input_to_host=host
+    resend_input_to_host=cfg[moduleName].get('resend_input_to_host','localhost')
+    resend_input_to_port=cfg[moduleName].getint('resend_input_to_port',None)
+    
     
     s = socket(AF_INET, SOCK_DGRAM)
     s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
@@ -28,10 +39,63 @@ def UDPserver(host,port,log):
     s.bind((host, int(port)))
     while 1:
         (data, addr) = s.recvfrom(128*1024)
-        yield data
+        readout,status=dgram_converter(data,keys['required'],keys['target'])
+#        s.sendto(data, (host, int(port)))
+        yield readout,status
+
+        if resend_input_to_port!=None:
+            s.sendto(data, (resend_input_to_host, int(resend_input_to_port)))
+            if args.verbose>1:
+                log.debug('resending input data')
+        
 
 
-def startServerUDP(cfg,moduleName,args,sqldbProxy,datagramConverter,keys,log):
+def UDPserver_time_avg(host,port,log,dgram_converter,**kwargs):
+    '''
+    UDP generator that can average stuff over time
+    '''
+    s = socket(AF_INET, SOCK_DGRAM)
+    s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+    s.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
+    s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+
+    keys=kwargs['keys']
+    moduleName=kwargs['moduleName']
+    args=kwargs['args']
+    cfg=kwargs['cfg']
+    avg_int=cfg[moduleName].getint('averaging_interval',60)
+    delta=datetime.timedelta(seconds=avg_int)
+
+    resend_output_to_host=cfg[moduleName].get('resend_output_to_host','localhost')
+    resend_output_to_port=cfg[moduleName].getint('resend_output_to_port',None)
+    
+    dt0=datetime.datetime.utcnow()
+    dgrams=[]
+    for readout,status in UDPserver(host,port,log,dgram_converter,**kwargs):
+        if status['result']:
+            dgrams.append(readout)
+            dt=datetime.datetime.utcnow()
+#             print(dt)
+#             print(dt0+delta)
+            if dt>dt0+delta:
+                avg_readout=storage.bin_list_dict_vals(dgrams,avg_int)
+                dt0=dt0+delta
+                status['time_avg_samples']=len(dgrams)
+                dgrams=[]
+                yield avg_readout,status
+
+                if resend_output_to_port!=None:
+                    s.sendto(commons.dict2str(avg_readout).encode(), (resend_output_to_host, int(resend_output_to_port)))
+                    if args.verbose>1:
+                        log.debug('resending output data')
+
+
+# def startServerUDP(cfg,moduleName,args,sqldbProxy,datagramConverter,keys,log):
+def startServerUDP(cfg,moduleName,args,datagramConverter,log,**kwargs):
+    '''
+    kwargs
+    ------
+    '''
     try:
         host=cfg[moduleName]['udp_ip'].split(',')[0]
         port=cfg[moduleName]['udp_port'].split(',')[0]
@@ -41,9 +105,14 @@ def startServerUDP(cfg,moduleName,args,sqldbProxy,datagramConverter,keys,log):
         sys.exit(1)
     db=None
 
+    keys={'required' : json.loads(cfg[moduleName]['required_keys']), 
+          'target' : json.loads(cfg[moduleName]['db_keys'])
+          }
+    assert(len(keys['required'])==len(keys['target']))
 
     if args.saveToDB:
-        db = sqldbProxy(host=cfg['DB']['host'], port=cfg['DB']['port'],
+        
+        db = storage.FocusBoxMeteo_sqldb(host=cfg['DB']['host'], port=cfg['DB']['port'],
                          db=cfg['DB']['db'],table=cfg[moduleName]['table'],
                          user=cfg['DB']['user'], 
                          passwd=cfg['DB']['passwd'],
@@ -52,7 +121,6 @@ def startServerUDP(cfg,moduleName,args,sqldbProxy,datagramConverter,keys,log):
 
     rcon=None
     if args.saveToRedis:
-        import redis
 #         from redis_namespace import StrictRedis
 # 
 #         rcon = redis.StrictRedis()
@@ -62,19 +130,33 @@ def startServerUDP(cfg,moduleName,args,sqldbProxy,datagramConverter,keys,log):
         redis_con={'con' : rcon, 
                    'pref' : cfg[moduleName]['redisNamespace'],
                    'maxelem' : cfg['REDIS']['list_max_elem']}
+    
+    UDPgenerator=UDPserver
+    if cfg.has_option(moduleName,'averaging_interval'):
+        if args.verbose:
+            log.debug('time averaging generator')
+#             print('time averaging generator')
+        UDPgenerator=UDPserver_time_avg
         
-    for data in UDPserver(host,port,log):
+    
+    for readout,status in UDPgenerator(host,port,log, 
+                                       dgram_converter=datagramConverter,
+                                       keys=keys,
+                                       cfg=cfg,
+                                       args=args,
+                                       moduleName=moduleName):
         
-        readout,status=datagramConverter(data,keys['required'],keys['target'])
+#         readout,status=datagramConverter(data,keys['required'],keys['target'])
         
         if args.test1:
             dataRef={}
         if args.verbose:
             log.debug('New datagram')
             log.debug('{}'.format(commons.dict2str(readout)))
+            log.debug('{}'.format(commons.dict2str(status)))
 
         if len(status['comments'])>0:
-            log.info(';'.join(x for x in status['comments']))
+            log.debug(';'.join(x for x in status['comments']))
 
 
             
@@ -86,8 +168,9 @@ def startServerUDP(cfg,moduleName,args,sqldbProxy,datagramConverter,keys,log):
             if args.saveToDB:
                 db.store(readout)
         else:
-            log.error('Bad datagram: ')
-            log.error(','.join(x for x in status['comments']))
+            if args.verbose:
+                log.error('Bad datagram: ')
+                log.error(','.join(x for x in status['comments']))
     
 
 # if __name__ == '__main__':

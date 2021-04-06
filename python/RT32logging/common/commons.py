@@ -54,6 +54,11 @@ def str2bool(v):
         raise ArgumentTypeError('Boolean value expected.')
 
 
+def strip_white_spaces(s):
+    '''
+    '''
+    return s.strip()
+
 def getParser(program_license,program_epilog,program_version_message):
     parser = ArgumentParser(description=program_license, epilog=program_epilog, formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]", default=0)
@@ -62,6 +67,12 @@ def getParser(program_license,program_epilog,program_version_message):
     parser.add_argument('-V', '--version', action='version', version=program_version_message)
 #         parser.add_argument(dest="paths", help="paths to folder(s) with source file(s) [default: %(default)s]", metavar="path", nargs='+')
 
+    parser.add_argument("-c", "--config_file", 
+                        help='Config file name to seek for in default locations [default: %(default)s]', 
+                        metavar="VALUE", 
+                        type=str, 
+                        default='RT32netlog.ini')
+    
     parser.add_argument("--serverUDP", dest="serverUDP", action='store_true', help='''
     run in server mode -- starts collecting data from UDP packages and storing them to mysql db.
     ''')

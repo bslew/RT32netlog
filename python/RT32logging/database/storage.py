@@ -6,6 +6,7 @@ Created on Jan 23, 2019
 
 import os,sys
 import numpy as np
+from scipy.stats import binned_statistic
 import datetime
 import MySQLdb
 from RT32logging.communication import config_file
@@ -79,7 +80,21 @@ class redissrv:
 #         print(d)
         return d
     
-    def fetch(self,dt1,dt2,step=6,json_serializable=False):
+    
+    def fetchLastNhours(self, Nhours,step=6,json_serializable=False, **kwargs):
+        '''
+        
+        Keywords
+        --------
+        
+            avgdt - interval in seconds over which to average the redis data
+        '''
+        dt2=datetime.datetime.utcnow()
+        dt1=dt2 - datetime.timedelta(hours=Nhours)
+        return self.fetch(dt1, dt2, step, json_serializable, **kwargs)
+
+    
+    def fetch(self,dt1,dt2,step=6,json_serializable=False, **kwargs):
         '''
         Fetch data from redis storage
         
@@ -91,6 +106,11 @@ class redissrv:
             step - select every this row
             json_serializable- if True, then datatime objects are converted back to strings
                 before returning.Default (False)
+
+        Keywords
+        --------
+        
+            dtavg - interval in seconds over which to average the redis data
             
         returns:
             tuple: a list with column names, data
@@ -134,6 +154,13 @@ class redissrv:
         for k,v in d.items():
             dsel[k]=list(np.array(d[k])[mask][::step])
         
+        
+        '''
+        average in time domain
+        '''
+        if 'dtavg' in kwargs.keys():
+            dsel=bin_dict_list_vals(dsel, kwargs['dtavg'], 'mean')
+        
         '''
         convert datetime objects back to strings
         '''
@@ -141,6 +168,69 @@ class redissrv:
             dsel['dt']=[datetime.datetime.strftime(x,'%Y-%m-%d %H:%M:%S') for x in dsel['dt'] ]
         return dsel
 
+
+def bin_list_dict_vals(data,dtavg,how='mean'):
+    '''
+    bin list of dictionaries containing 'dt' key datetime objects 
+        that are used for averaging over time
+        of all other keys that must be float lists of the same length
+        
+    parameter
+    ---------
+        data - list of dict(). All keys in each list element dictionary must be consistent.
+        
+    returns
+    -------
+        binned version of dictionary containing a given statistic (mean by default)
+    '''
+    
+    '''
+    convert list of dict to dict containing lists
+    '''
+    if len(data)==0:
+        return None
+    
+    d={}
+    for k,v in data[0].items():
+        d[k] = list()
+    for entry in data:
+        for k,v in entry.items():
+            if k=='dt':
+                d[k].append(datetime.datetime.strptime(v,"%Y-%m-%d %H:%M:%S"))
+#                 print(v)
+#                 print(d[k])
+            else:
+                d[k].append(float(v))
+
+#     print(d)        
+    dstat=bin_dict_list_vals(d, dtavg, how)
+    for k,v in dstat.items():
+        dstat[k]=v[0]
+
+    return dstat
+    
+
+def bin_dict_list_vals(data, dtavg, how='mean',nmin=1):
+    '''
+    data - dict containing 'dt' key with datetime objects that are used for averaging over time
+        of all other keys that must be float lists of the same length
+        
+    '''
+#     def binned(X):
+#         return binned_statistic(X,X,how,dtavg)[0]
+    
+    X=[ x.timestamp() for x in data['dt'] ]
+    n=nmin if np.abs(X[-1]-X[0])//dtavg < nmin else np.abs(X[-1]-X[0])//dtavg
+#     print(X)
+#     print(data.keys())
+    for k in data.keys():
+        if k=='dt':
+            data[k]=list([datetime.datetime.fromtimestamp(ts) for ts in binned_statistic(X,X,how,n)[0]])
+            
+        else:
+            Y=data[k]
+            data[k]=list(binned_statistic(X,Y,how,n)[0])
+    return data
 
 def save_to_file(fname,data_dict, logger=None):
     '''

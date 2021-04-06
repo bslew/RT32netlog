@@ -102,11 +102,11 @@ USAGE
         '''
         read config section for the module
         '''        
-        configSection=program_module_name
-        cfg=RT32logging.communication.config_file.readConfigFile()
-        assert(configSection in cfg.keys())
+        moduleSection=program_module_name
+        cfg=RT32logging.communication.config_file.readConfigFile(args.config_file)
+        assert(moduleSection in cfg.keys())
 
-        program_log_title=cfg[program_module_name]['logPrefix']
+        program_log_title=cfg[program_module_name].get('logPrefix',program_module_name)
 
         '''
         define logger
@@ -118,9 +118,13 @@ USAGE
         log = RT32logging.logger.get_logging(program_log_title,logfile,lvl=lvl)
         log.info(__file__+": === NEW RUN ===")
 
-        args.saveToDB=RT32logging.common.commons.str2bool(RT32logging.communication.config_file.getOption('saveToDB', cfg,configSection,args.saveToDB))
-        args.saveToFile=RT32logging.common.commons.str2bool(RT32logging.communication.config_file.getOption('saveToFile', cfg,configSection,args.saveToFile))
-        args.saveToRedis=RT32logging.common.commons.str2bool(RT32logging.communication.config_file.getOption('saveToRedis', cfg,configSection,args.saveToRedis))
+        '''
+        override command line parameters with config file settings
+        If config file settings do not exist, defaults from parser are used.
+        '''
+        args.saveToDB=RT32logging.common.commons.str2bool(RT32logging.communication.config_file.getOption('saveToDB', cfg,moduleSection,args.saveToDB))
+        args.saveToFile=RT32logging.common.commons.str2bool(RT32logging.communication.config_file.getOption('saveToFile', cfg,moduleSection,args.saveToFile))
+        args.saveToRedis=RT32logging.common.commons.str2bool(RT32logging.communication.config_file.getOption('saveToRedis', cfg,moduleSection,args.saveToRedis))
 
         if verbose > 1:
             log.debug("Verbose mode on")
@@ -136,22 +140,23 @@ USAGE
             if os.path.isfile(RT32logging.communication.config_file.configFile):
                 log.warning('Config file ({}) already exists. Will not overwrite.'.format(RT32logging.communication.config_file.configFile))
                 log.warning('Remove config file manually and run this program again if you want to start a fresh config file.')
-                cfg=RT32logging.communication.config_file.readConfigFile()
+                cfg=RT32logging.communication.config_file.readConfigFile(args.config_file)
                 db_keys=cfg.getlist(program_module_name,'db_keys')
 
-                log.info("Configuring DB table")
-                db = RT32logging.database.storage.sqldb(
-                    host=cfg['DB']['host'], port=cfg['DB']['port'],
-                    dbname=cfg['DB']['db'],table=cfg[configSection]['table'],
-                    user=cfg['DB']['user'],
-                    passwd=cfg['DB']['passwd'],
-                    cols=json.loads(cfg[program_module_name]['db_keys']),
-                    logger=log,
-                    )
-                db.connect()
-                if verbose>0:
-                    log.info("DB connected: {}".format(db.connected()))
-                db.create_table()
+                if args.saveToDB:
+                    log.info("Configuring DB table")
+                    db = RT32logging.database.storage.sqldb(
+                        host=cfg['DB']['host'], port=cfg['DB']['port'],
+                        dbname=cfg['DB']['db'],table=cfg[moduleSection]['table'],
+                        user=cfg['DB']['user'],
+                        passwd=cfg['DB']['passwd'],
+                        cols=json.loads(cfg[program_module_name]['db_keys']),
+                        logger=log,
+                        )
+                    db.connect()
+                    if verbose>0:
+                        log.info("DB connected: {}".format(db.connected()))
+                    db.create_table()
             
             else:
                 cfg=RT32logging.communication.config_file.writeConfigFile(config_file.configFile)
@@ -161,13 +166,15 @@ USAGE
             
                         
         if args.serverUDP:
-            keys={'required' : json.loads(cfg[program_module_name]['required_keys']), 
-                  'target' : json.loads(cfg[program_module_name]['db_keys'])}
-#             server.startServerUDP(cfg, configSection, args, storage.FocusBoxMeteo_sqldb,UDPdatagrams.convert_UDP_datagram_focus_cabin,keys,log)
-            RT32logging.server.startServerUDP(cfg, configSection, args, 
-                                              RT32logging.database.storage.FocusBoxMeteo_sqldb,
+#             keys={'required' : json.loads(cfg[program_module_name]['required_keys']), 
+#                   'target' : json.loads(cfg[program_module_name]['db_keys'])}
+#             assert(len(keys['required']==len(keys['target'])))
+#             server.startServerUDP(cfg, moduleSection, args, storage.FocusBoxMeteo_sqldb,UDPdatagrams.convert_UDP_datagram_focus_cabin,keys,log)
+            RT32logging.server.startServerUDP(cfg, moduleSection, args, 
+#                                               RT32logging.database.storage.FocusBoxMeteo_sqldb,
                                               RT32logging.communication.UDPdatagrams.convert_UDP_datagram,
-                                              keys,log)
+#                                              keys,
+                                              log)
 
         return 0
     except KeyboardInterrupt:

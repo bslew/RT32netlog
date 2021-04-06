@@ -82,22 +82,22 @@ class RT32netlogParser(configparser.ConfigParser):
 #             print(it)
         return l
 
-def readConfigFile():
+def readConfigFile(cf_name='RT32netlog.ini'):
 #     config = configparser.ConfigParser()
     config = RT32netlogParser()
-    configFile=os.environ['HOME']+os.sep+'.RT32netlog.ini'
+    configFile=os.environ['HOME']+os.sep+'.'+cf_name
     if os.path.isfile(configFile):
         print('Found configuration file: {}'.format(configFile))
         config.read(configFile)
     else:
         print('Cound not find config file: {}'.format(configFile))
-        configFile='/etc/RT32netlog/RT32netlog.ini'
+        configFile='/etc/RT32netlog/'+cf_name
         if os.path.isfile(configFile):
             print('Found configuration file: {}'.format(configFile))
             config.read(configFile)
         else:
             print('Cound not find config file: {}'.format(configFile))
-            configFile=os.environ['HOME']+os.sep+'.RT32netlog.ini'
+            configFile=os.environ['HOME']+os.sep+'.'+cf_name
             config=writeConfigFile(configFile)
             print("Generated config file in: {}".format(configFile))
             
