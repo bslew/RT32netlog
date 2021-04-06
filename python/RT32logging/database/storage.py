@@ -159,7 +159,7 @@ class redissrv:
         average in time domain
         '''
         if 'dtavg' in kwargs.keys():
-            dsel=bin_dict_list_vals(dsel, kwargs['dtavg'], 'mean')
+            dsel=bin_dict_list_vals(dsel, dtavg=kwargs['dtavg'], how='mean', nmin=24)
         
         '''
         convert datetime objects back to strings
