@@ -225,7 +225,7 @@ def bin_dict_list_vals(data, dtavg, how='mean',nmin=1):
 #     print(data.keys())
     for k in data.keys():
         if k=='dt':
-            data[k]=list([datetime.datetime.fromtimestamp(ts) for ts in binned_statistic(X,X,how,n)[0]])
+            data[k]=list([datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S") for ts in binned_statistic(X,X,how,n)[0]])
             
         else:
             Y=data[k]

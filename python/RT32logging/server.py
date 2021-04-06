@@ -128,7 +128,7 @@ def startServerUDP(cfg,moduleName,args,datagramConverter,log,**kwargs):
         rcon=redis.Redis(host=cfg['REDIS']['host'], port=cfg['REDIS']['port'],
                          db=cfg['REDIS']['db'])
         redis_con={'con' : rcon, 
-                   'pref' : cfg[moduleName]['redisNamespace'],
+                   'pref' : cfg[moduleName].get('redisNamespace',moduleName),
                    'maxelem' : cfg['REDIS']['list_max_elem']}
     
     UDPgenerator=UDPserver
