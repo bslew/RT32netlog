@@ -220,16 +220,32 @@ def bin_dict_list_vals(data, dtavg, how='mean',nmin=1):
 #         return binned_statistic(X,X,how,dtavg)[0]
     
     X=[ x.timestamp() for x in data['dt'] ]
+    if len(X)==0:
+        return None
+#     print(X)
+
     n=nmin if np.abs(X[-1]-X[0])//dtavg < nmin else np.abs(X[-1]-X[0])//dtavg
+#     print(n)
 #     print(X)
 #     print(data.keys())
     for k in data.keys():
         if k=='dt':
-            data[k]=list([datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S") for ts in binned_statistic(X,X,how,n)[0]])
+#             print(binned_statistic(X,X,how,n))
+#             data[k]=list([datetime.datetime.fromtimestamp(ts) for ts in binned_statistic(X,X,how,n)[0]])
+            data[k]=[datetime.datetime.fromtimestamp(ts) for ts in binned_statistic(X,X,how,n)[0] if not np.isnan(ts) ]
             
         else:
             Y=data[k]
-            data[k]=list(binned_statistic(X,Y,how,n)[0])
+#             data[k]=list(binned_statistic(X,Y,how,n)[0])
+            data[k]=[x for x in binned_statistic(X,Y,how,n)[0] if not np.isnan(x)]
+    
+    '''
+    remove NaNs from stupis binned_statistic function
+    '''        
+#     mask=np.logical_not(np.isnan(data['dt']))
+    for k in data.keys():
+        data[k]=list(data[k])
+    
     return data
 
 def save_to_file(fname,data_dict, logger=None):
