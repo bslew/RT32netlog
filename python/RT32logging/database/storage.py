@@ -138,7 +138,10 @@ class redissrv:
         for row in raw:
             for k,v in row:
                 if k=='dt':
-                    d[k].append(datetime.datetime.strptime(v,'%Y-%m-%d %H:%M:%S'))
+                    try:
+                        d[k].append(datetime.datetime.strptime(v,'%Y-%m-%d %H:%M:%S'))
+                    except ValueError:
+                        d[k].append(datetime.datetime.strptime(v,'%Y-%m-%d %H:%M:%S.%f'))
                 else:
                     d[k].append(float(v))                        
 
@@ -215,6 +218,8 @@ def bin_dict_list_vals(data, dtavg, how='mean',nmin=1):
     data - dict containing 'dt' key with datetime objects that are used for averaging over time
         of all other keys that must be float lists of the same length
         
+    dtavg - averaging window [seconds]
+        
     '''
 #     def binned(X):
 #         return binned_statistic(X,X,how,dtavg)[0]
@@ -225,8 +230,8 @@ def bin_dict_list_vals(data, dtavg, how='mean',nmin=1):
 #     print(X)
 
     n=nmin if np.abs(X[-1]-X[0])//dtavg < nmin else np.abs(X[-1]-X[0])//dtavg
-#     print(n)
-#     print(X)
+#     print('n',n)
+#     print('dtavg',dtavg)
 #     print(data.keys())
     for k in data.keys():
         if k=='dt':
@@ -238,7 +243,8 @@ def bin_dict_list_vals(data, dtavg, how='mean',nmin=1):
             Y=data[k]
 #             data[k]=list(binned_statistic(X,Y,how,n)[0])
             data[k]=[x for x in binned_statistic(X,Y,how,n)[0] if not np.isnan(x)]
-    
+
+#     print('len(Y)',len(Y))    
     '''
     remove NaNs from stupis binned_statistic function
     '''        
