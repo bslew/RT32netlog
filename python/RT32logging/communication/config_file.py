@@ -53,7 +53,10 @@ class RT32netlogParser(configparser.ConfigParser):
     def __init__(self):
         super().__init__()
 #         list_keys=['db_keys']
-    
+        self.set('DEFAULT','saveToRedis','False')
+        self.set('DEFAULT','saveToDB','False')
+        self.set('DEFAULT','saveToFile','False')
+#         self['DEFAULT']['resend_input_to_port']=None
         
     def getlist(self, section_name,option_name):
 #         for lk in list_keys:
@@ -85,22 +88,27 @@ class RT32netlogParser(configparser.ConfigParser):
 def readConfigFile(cf_name='RT32netlog.ini'):
 #     config = configparser.ConfigParser()
     config = RT32netlogParser()
-    configFile=os.environ['HOME']+os.sep+'.'+cf_name
-    if os.path.isfile(configFile):
+    configFile=cf_name
+    if os.path.isfile(cf_name):
         print('Found configuration file: {}'.format(configFile))
         config.read(configFile)
     else:
-        print('Cound not find config file: {}'.format(configFile))
-        configFile='/etc/RT32netlog/'+cf_name
+        configFile=os.environ['HOME']+os.sep+'.'+cf_name
         if os.path.isfile(configFile):
             print('Found configuration file: {}'.format(configFile))
             config.read(configFile)
         else:
             print('Cound not find config file: {}'.format(configFile))
-            configFile=os.environ['HOME']+os.sep+'.'+cf_name
-            config=writeConfigFile(configFile)
-            print("Generated config file in: {}".format(configFile))
-            
+            configFile='/etc/RT32netlog/'+cf_name
+            if os.path.isfile(configFile):
+                print('Found configuration file: {}'.format(configFile))
+                config.read(configFile)
+            else:
+                print('Cound not find config file: {}'.format(configFile))
+#                 configFile=os.environ['HOME']+os.sep+'.'+cf_name
+#                 config=writeConfigFile(configFile)
+#                 print("Generated config file in: {}".format(configFile))
+                raise 'Cound not find config file'
 
     return config
 
@@ -115,7 +123,10 @@ def getOption(optName,cfg,cfgSection,valueIfNotExists):
     '''
     if cfgSection in cfg.keys():
         if optName in cfg[cfgSection].keys():
-            return cfg[cfgSection][optName]
+            if cfg[cfgSection][optName].startswith('['):
+                return json.loads(cfg[cfgSection][optName])
+            else:
+                return cfg[cfgSection][optName]
     
     return valueIfNotExists
 

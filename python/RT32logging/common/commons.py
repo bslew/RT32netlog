@@ -77,9 +77,9 @@ def getParser(program_license,program_epilog,program_version_message):
     run in server mode -- starts collecting data from UDP packages and storing them to mysql db.
     ''')
     parser.add_argument("--test1", dest="test1", action='store_true', help="test run 1")
-    parser.add_argument("--saveToDB", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='True')
+    parser.add_argument("--saveToDB", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='False')
     parser.add_argument("--saveToFile", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='False')
-    parser.add_argument("--saveToRedis", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='True')
+    parser.add_argument("--saveToRedis", help='True or False [default: %(default)s]', metavar="VALUE", type=str2bool, default='False')
 #         parser.add_argument("--test", dest="test", action='store_true', help="test run")
     parser.add_argument("--setup", dest="setup", action='store_true', help="initialize configuration file")
     parser.add_argument("-o", "--outfile", dest="outfile", help='Output file name [default: %(default)s]', metavar="VALUE", type=str, nargs='?', default='data.csv')
@@ -87,7 +87,7 @@ def getParser(program_license,program_epilog,program_version_message):
                         help='''Module name - same as section name in config file. 
                         Eg. For saving focus cabin stuff use module name 'FOCUS_CABIN_DATA'
                         [default: %(default)s]''',
-                        metavar="VALUE", type=str, default='')
+                        metavar="VALUE", type=str, required=True)
     
 
     return parser

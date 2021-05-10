@@ -5,6 +5,7 @@ Created on Jan 20, 2020
 '''
 import datetime
 from RT32logging.common import commons
+import re
 
 def convert_UDP_datagram_electric_cabin(data):
     '''
@@ -69,7 +70,7 @@ def convert_UDP_datagram_focus_cabin(data):
     
     return d
 
-def convert_UDP_datagram(data,required_keys, output_keys):
+def convert_UDP_datagram(data,required_keys, output_keys, input_resub=None):
     '''
     convert data string to key value dictionary
     The function checks if all required keys are present
@@ -82,6 +83,8 @@ def convert_UDP_datagram(data,required_keys, output_keys):
         data - string with required data format
         required_keys - list of required keys that should be present
         output_keys - list of corresponding output keys (should have the same length as required_keys
+        input_resub = [] list of [pattern,replacement] strings used to feed to re.sub(pattern, replacement, data) function
+            before processing
         
     returns
     -------
@@ -94,9 +97,16 @@ def convert_UDP_datagram(data,required_keys, output_keys):
     missing_keys=[]
     status={'result': True, 'comments' :[] }
 
+    data=data.decode() if isinstance(data,bytes) else data
+
+    if input_resub!=None:
+        for p,r in input_resub:
+            data=re.sub(r'%s' % p,r'%s' % r,data)
+
     data=commons.strip_white_spaces(data)
 
-    for param in data.decode().split(','):
+    for param in data.split(','):
+#     for param in data.decode().split(','):
         kv=param.split('=')
 
         if len(kv)==2:

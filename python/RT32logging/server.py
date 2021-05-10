@@ -17,6 +17,7 @@ sys.path.append(os.sep.join(os.path.abspath(__file__).split(os.sep)[:-1]))
 from common import commons
 from database import storage
 from communication import UDPdatagrams
+from communication import config_file
 
 
 
@@ -30,7 +31,8 @@ def UDPserver(host,port,log,dgram_converter,**kwargs):
 #     resend_input_to_host=host
     resend_input_to_host=cfg[moduleName].get('resend_input_to_host','localhost')
     resend_input_to_port=cfg[moduleName].getint('resend_input_to_port',None)
-    
+    input_resub=config_file.getOption('input_resub',cfg,moduleName,None)
+#     print(input_resub)
     
     s = socket(AF_INET, SOCK_DGRAM)
     s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
@@ -39,7 +41,9 @@ def UDPserver(host,port,log,dgram_converter,**kwargs):
     s.bind((host, int(port)))
     while 1:
         (data, addr) = s.recvfrom(128*1024)
-        readout,status=dgram_converter(data,keys['required'],keys['target'])
+        if args.verbose>2:
+            print('datagram:',data)
+        readout,status=dgram_converter(data,keys['required'],keys['target'],input_resub=input_resub)
 #        s.sendto(data, (host, int(port)))
         yield readout,status
 
@@ -105,10 +109,18 @@ def startServerUDP(cfg,moduleName,args,datagramConverter,log,**kwargs):
         sys.exit(1)
     db=None
 
-    keys={'required' : json.loads(cfg[moduleName]['required_keys']), 
-          'target' : json.loads(cfg[moduleName]['db_keys'])
-          }
-    assert(len(keys['required'])==len(keys['target']))
+    keys={}
+#     if cfg[moduleName]['required_keys']=='raw':
+#         keys['required']='_raw'
+#     else:
+    keys['required']=json.loads(cfg[moduleName]['required_keys'])
+
+    if cfg[moduleName]['saveToDB'] or cfg[moduleName]['saveToRedis'] or cfg[moduleName]['saveToFile']:
+        keys['target']=json.loads(cfg[moduleName]['db_keys'])
+#     keys={'required' : json.loads(cfg[moduleName]['required_keys']), 
+#           'target' : json.loads(cfg[moduleName]['db_keys'])
+#           }
+        assert(len(keys['required'])==len(keys['target']))
 
     if args.saveToDB:
         
