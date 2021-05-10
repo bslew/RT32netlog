@@ -56,6 +56,7 @@ class RT32netlogParser(configparser.ConfigParser):
         self.set('DEFAULT','saveToRedis','False')
         self.set('DEFAULT','saveToDB','False')
         self.set('DEFAULT','saveToFile','False')
+        self.set("DEFAULT",'alarm_email','["blew@astro.umk.pl"]')
 #         self['DEFAULT']['resend_input_to_port']=None
         
     def getlist(self, section_name,option_name):

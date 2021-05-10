@@ -33,6 +33,15 @@ def UDPserver(host,port,log,dgram_converter,**kwargs):
     resend_input_to_port=cfg[moduleName].getint('resend_input_to_port',None)
     input_resub=config_file.getOption('input_resub',cfg,moduleName,None)
 #     print(input_resub)
+    resend_output_to_host=cfg[moduleName].get('resend_output_to_host','localhost')
+    resend_output_to_port=cfg[moduleName].getint('resend_output_to_port',None)
+
+    resend_output=True
+#     print('averaging_interval',cfg[moduleName].getint('averaging_interval',None))
+    if cfg[moduleName].getint('averaging_interval',None)!=None:
+        resend_output=False
+    if resend_output_to_port==None:
+        resend_output=False
     
     s = socket(AF_INET, SOCK_DGRAM)
     s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
@@ -45,6 +54,9 @@ def UDPserver(host,port,log,dgram_converter,**kwargs):
             print('datagram:',data)
         readout,status=dgram_converter(data,keys['required'],keys['target'],input_resub=input_resub)
 #        s.sendto(data, (host, int(port)))
+    
+
+
         yield readout,status
 
         if resend_input_to_port!=None:
@@ -52,6 +64,10 @@ def UDPserver(host,port,log,dgram_converter,**kwargs):
             if args.verbose>1:
                 log.debug('resending input data')
         
+        if resend_output:
+            s.sendto(commons.dict2str(readout).encode(), (resend_output_to_host, int(resend_output_to_port)))
+            if args.verbose>1:
+                log.debug('resending output data')
 
 
 def UDPserver_time_avg(host,port,log,dgram_converter,**kwargs):
@@ -174,6 +190,15 @@ def startServerUDP(cfg,moduleName,args,datagramConverter,log,**kwargs):
 
             
         if status['result']:
+            
+            '''
+            check values if needed
+            '''
+            print(readout)
+            UDPdatagrams.alarmCheck(readout,cfg,moduleName).execute()
+            
+            
+            
             if args.saveToFile:
                 storage.save_to_file(args.outfile,readout,log)
             if args.saveToRedis:

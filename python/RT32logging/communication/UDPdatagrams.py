@@ -5,7 +5,9 @@ Created on Jan 20, 2020
 '''
 import datetime
 from RT32logging.common import commons
+from RT32logging.communication import config_file
 import re
+import smtplib
 
 def convert_UDP_datagram_electric_cabin(data):
     '''
@@ -152,3 +154,80 @@ def verify_UDP_datagram_dict(d):
             status['result']=False
         
     return status
+
+
+class alarmCheck():
+    def __init__(self,d,cfg,moduleName):
+        '''
+        
+        '''
+        self.dgramdict=d
+        self.cfg=cfg
+        self.modulename=moduleName
+        self.alarmcfg=config_file.getOption('alarm_on',cfg,moduleName,None)
+        self.alarmemail=config_file.getOption('alarm_email',cfg,moduleName,None)
+        self.offendingKey=None
+        self.offendingValue=None
+        self.alarm_thres=None
+        self.raise_alarm=False
+#         if alarmcfg==None:
+        
+        
+    def execute(self):
+        '''
+        check if alarm should be raised and raise if needed
+        '''
+        if self.check():
+            self.raiseAlarm()
+    
+    def check(self):
+        '''
+        check alarm conditions
+        '''
+        for al in self.alarmcfg:
+            key,cond,thres_val=al
+            
+            if cond=='>':
+                if float(self.dgramdict[key])>float(thres_val):
+                    self.raise_alarm=True
+                    self.offendingKey=key
+                    self.offendingValue=self.dgramdict[key]
+                    self.alarm_thres=thres_val
+                    return True
+            elif cond=='<':
+                if float(self.dgramdict[key])<float(thres_val):
+                    self.raise_alarm=True
+                    self.offendingKey=key
+                    self.offendingValue=self.dgramdict[key]
+                    self.alarm_thres=thres_val
+                    return True
+
+        return False
+        
+    def raiseAlarm(self):
+        '''
+        alarm
+        '''
+        print('RISING ALARM')
+        
+        
+
+
+        fromaddr = "RT32netlog@astro.umk.pl"
+        toaddrs  = self.alarmemail
+        subject= '[RT32netlog] ALARM in module: %s due to key %s=%s (thres. %s)' % (
+            self.modulename, self.offendingKey, self.offendingValue, self.alarm_thres)
+
+        # Add the From: and To: headers at the start!
+        msg = ("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n"
+               % (fromaddr, ", ".join(toaddrs),subject))
+        msg=msg+'This e-mails is sent automatically from RT32netlog module: "{}" '.format(self.modulename)
+        msg+='working on galaxy. Do not reply to this message.'
+
+        print("Message length is", len(msg))
+
+        server = smtplib.SMTP('localhost')
+#         server.set_debuglevel(1)
+        server.sendmail(fromaddr, toaddrs, msg)
+        server.quit()        
+        
