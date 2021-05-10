@@ -114,13 +114,14 @@ def startServerUDP(cfg,moduleName,args,datagramConverter,log,**kwargs):
 #         keys['required']='_raw'
 #     else:
     keys['required']=json.loads(cfg[moduleName]['required_keys'])
-
-    if cfg[moduleName]['saveToDB'] or cfg[moduleName]['saveToRedis'] or cfg[moduleName]['saveToFile']:
-        keys['target']=json.loads(cfg[moduleName]['db_keys'])
+    keys['target']=None
+#     if cfg[moduleName].getboolean('saveToDB') or \
+#         cfg[moduleName].getboolean('saveToRedis') or cfg[moduleName].getboolean('saveToFile'):
+    keys['target']=json.loads(cfg[moduleName]['db_keys'])
 #     keys={'required' : json.loads(cfg[moduleName]['required_keys']), 
 #           'target' : json.loads(cfg[moduleName]['db_keys'])
 #           }
-        assert(len(keys['required'])==len(keys['target']))
+    assert(len(keys['required'])==len(keys['target']))
 
     if args.saveToDB:
         
