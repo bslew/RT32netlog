@@ -1,0 +1,22 @@
+[Unit]
+Description=client_ascii UDP datagrams saver
+Wants=network-online.target
+
+[Service]
+User=meteo
+# The configuration file application.properties should be here:
+
+#change this to your workspace
+WorkingDirectory=/home/meteo
+
+#path to executable. 
+#executable is a bash script which calls jar fileExecStart=/home/ubuntu/workspace/my-webapp
+ExecStart=/home/meteo/venv/bin/save-UDPdata-generic-module.py --serverUDP -m CLIENT_ASCII
+#Requires=ntpdate
+
+SuccessExitStatus=143
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=10
+[Install]
+WantedBy=multi-user.target
