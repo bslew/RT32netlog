@@ -184,6 +184,9 @@ class alarmCheck():
         '''
         check alarm conditions
         '''
+        if self.alarmcfg is None:
+            return False
+        
         for al in self.alarmcfg:
             key,cond,thres_val=al
             
