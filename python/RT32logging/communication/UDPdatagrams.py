@@ -128,9 +128,13 @@ def convert_UDP_datagram(data,required_keys, output_keys, input_resub=None):
         if k not in d.keys():
             d[k]=None
     
+    dt=datetime.datetime.utcnow()
     if 'dt' not in d.keys():
-        dtstr=datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        dtstr=dt.strftime("%Y-%m-%d %H:%M:%S.%f")
         d['dt']=dtstr
+#         msec=dt.strftime("%f")
+#         d['_msec']=dtstr
+
 #     status=verify_UDP_datagram_dict(d)
 
     if len(extra_keys)>0:
