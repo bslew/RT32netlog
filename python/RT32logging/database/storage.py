@@ -168,7 +168,11 @@ class redissrv:
         convert datetime objects back to strings
         '''
         if json_serializable:
-            dsel['dt']=[datetime.datetime.strftime(x,'%Y-%m-%d %H:%M:%S') for x in dsel['dt'] ]
+            try:
+                dsel['dt']=[datetime.datetime.strftime(x,'%Y-%m-%d %H:%M:%S') for x in dsel['dt'] ]
+            except:
+                pass
+            
         return dsel
 
 
