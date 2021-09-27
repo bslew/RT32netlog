@@ -120,7 +120,7 @@ Of course the password needs to be set, and file access rights set to 600
 
 
 ### Other examples
-Check [etc/netlog.ini] for more examples, showing how to save to redis, files,
+Check [etc/netlog.ini](etc/netlog.ini) for more examples, showing how to save to redis, files,
 resend data to other ports or average datagrams on selected time scales,
 or even apply regular expressions.
 
