@@ -3,11 +3,11 @@
 This package implements capturing UDP datagrams to
 mySQL database and/or other storages.
 
-# CONTENTS:
+# Suported storages:
 
-	* RT32netlog package contains daemons working as ubuntu service at galaxy. 
-	  They read UDP datagrams and stores them to mySQL database on galaxy
-		
+ * mySQL
+ * redis
+ * files
 
 
 # DOWNLOAD
