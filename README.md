@@ -126,7 +126,8 @@ or even apply regular expressions.
 
 
 # Initialization
-One time databse initialization is needed for each service eg.:
+One time databse initialization is needed before saving data to it.
+This applies to blocks that use tables that do not yet exist:
 
 ```sh
 python python/services/save-UDPdata-generic-module.py -m EXAMPLE1 --setup -c examples/RT32netlog.ini
