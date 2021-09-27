@@ -1,6 +1,7 @@
 # GENERAL
 
-This package implements saving UDP datagrams from localnetwork to mySQL database and other data storages.
+This package implements capturing UDP datagrams to
+mySQL database and/or other storages.
 
 # CONTENTS:
 
@@ -12,7 +13,7 @@ This package implements saving UDP datagrams from localnetwork to mySQL database
 # DOWNLOAD
 
 ```sh
-git ssh://gitolite@galaxy.astro.uni.torun.pl/RT32netlog
+git clone https://github.com/bslew/RT32netlog.git
 ```
 
 # BUILD

@@ -3,3 +3,4 @@ sockets
 redis
 pandas
 Cython
+scipy

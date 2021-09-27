@@ -3,3 +3,8 @@
 /.project
 /venv/
 /dist/
+/MANIFEST.in~
+/requirements.txt~
+/test10.dat
+/test5.dat
+/test.dat

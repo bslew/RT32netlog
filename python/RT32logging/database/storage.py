@@ -53,7 +53,7 @@ class redissrv:
         '''
         self.rcon=rcon
         
-    def fetchLast(self):
+    def fetchLast(self) -> dict:
         '''
         fetch last entry stored in redis and return as dictionary.
         This intends to recover the UDP datagram structure temperarily stored
@@ -118,6 +118,10 @@ class redissrv:
         '''
         raw=fetch_from_redis(self.rcon)
         raw=[x.decode() for x in raw]
+        
+        if raw==[]:
+            return {}
+        
         
         '''
         convert to list of strings
