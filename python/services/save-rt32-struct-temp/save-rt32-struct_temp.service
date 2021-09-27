@@ -11,7 +11,7 @@ WorkingDirectory=/home/meteo/struct_temp
 
 #path to executable. 
 #executable is a bash script which calls jar fileExecStart=/home/ubuntu/workspace/my-webapp
-ExecStart=/usr/local/bin/save-UDPdata-generic-module.py --serverUDP -m STRUCT_TEMP
+ExecStart=/usr/local/bin/save-UDPdata-generic-module.py --serverUDP -m %i
 #Requires=ntpdate
 
 SuccessExitStatus=143
