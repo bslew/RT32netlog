@@ -164,13 +164,32 @@ This script makes sure that the data collecting program called
 
 is up and running.
 
+## More generally
+
+A generic module suitable for saving any type of UDP datagrams can be used instead
+of dedicated programs. For example to run service that will use block
+[my_block] from the configuration file use
+
+```sh
+python python/services/save-UDPdata-generic-module.py -m my_block --serverUDP
+```
+
+This will start and configure server as defined in the my_block block in the 
+configuration file (by default .RT32netlog.ini). The name of the config file 
+can be specified on the command line.
+
+See, 
+```sh
+python python/services/save-UDPdata-generic-module.py --help
+```
+for details.
+
+
 # MISSING DATA AND ANOMALY DETECTION
 
 TBD
 
 
 #AUTHOR
-Bartosz Lew [<bartosz.lew@umk.pl>](bartosz.lew@umk.pl)
+Bartosz Lew [<bartosz.lew@protonmail.pl>](bartosz.lew@protonmail.pl)
 
-#BUGS
-Send info to author or to [rt4-dev@cosmo.torun.pl](rt4-dev@cosmo.torun.pl)
