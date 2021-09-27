@@ -1,6 +1,6 @@
 # GENERAL
 
-This package implements capturing UDP datagrams to
+This package implements capturing UDP datagrams and saving to
 mySQL database and/or other storages.
 
 # Suported storages:
