@@ -18,42 +18,16 @@ git clone https://github.com/bslew/RT32netlog.git
 
 # BUILD & INSTALL
 ```sh
+cd RT32netlog
 python3 -m venv venv
 . venv/bin/activate
+pip install -r requirements.txt
 python3 setup.py build
 python3 setup.py install
 ```
 
-# INSTALL
 
-## Installation general
-
-The data acquisition daemon can work as a system service controlled via systemctl.
-The package is shipped with example scripts
-(e.g. save-electric_cabin-data.service) file which should be placed in the correct
-directory depending on the system. For ubuntu it should be 
-/etc/systemd/system/save-electric_cabin-data.service and the soft link to this file should be in
-/etc/systemd/system/multi-user.target.wants/save-electric_cabin-data.service.
-
-
-###### To install all services run provided `install_service_ubuntu.sh` script or run 
-
-`sudo ./install_services_ubuntu.sh`
-
-###### To install a service manually run
-
-`cp WS800UMB/save-electric_cabin-data.service /lib/systemd/`
-
-and
-
-`systemctl enable save-electric_cabin-data`
-
-Now you can use:
-
-`systemctl start/stop/restart/status save-electric_cabin-data`
-
-
-#Configuration
+# Configuration
 
 The operation of the package programs relay config files, 
 so the package should be configured before usage.
@@ -153,7 +127,7 @@ or even apply regular expressions.
 One time databse initialization is needed for each service eg.:
 
 ```sh
-python python/services/save-UDPdata-generic-module.py -m EXAMPLE1 --setup
+python python/services/save-UDPdata-generic-module.py -m EXAMPLE1 --setup -c examples/RT32netlog.ini
 ```
 
 
@@ -164,7 +138,7 @@ of dedicated programs. For example to run service that will use block
 [EXAMPLE1] from the configuration file use
 
 ```sh
-python python/services/save-UDPdata-generic-module.py -m EXAMPLE1 --serverUDP
+python python/services/save-UDPdata-generic-module.py -m EXAMPLE1 --serverUDP -c examples/RT32netlog.ini
 ```
 
 This will start and configure server as defined in the EXAMPLE1 block in the 
@@ -178,6 +152,34 @@ python python/services/save-UDPdata-generic-module.py --help
 for details.
 
 
-#AUTHOR
+# Installation of shipped script examples as system services
+
+The data acquisition daemon can work as a system service controlled via systemctl.
+The package is shipped with example scripts
+(e.g. save-electric_cabin-data.service) file which should be placed in the correct
+directory depending on the system. For ubuntu it should be 
+/etc/systemd/system/save-electric_cabin-data.service and the soft link to this file should be in
+/etc/systemd/system/multi-user.target.wants/save-electric_cabin-data.service.
+
+
+###### To install all services run provided `install_service_ubuntu.sh` script or run 
+
+`sudo ./install_services_ubuntu.sh`
+
+###### To install a service manually run
+
+`cp WS800UMB/save-electric_cabin-data.service /lib/systemd/`
+
+and
+
+`systemctl enable save-electric_cabin-data`
+
+Now you can use:
+
+`systemctl start/stop/restart/status save-electric_cabin-data`
+
+
+
+# AUTHOR
 Bartosz Lew [<bartosz.lew@protonmail.pl>](bartosz.lew@protonmail.pl)
 
