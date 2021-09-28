@@ -1,22 +1,30 @@
 # GENERAL
 
-This package implements capturing UDP datagrams and saving to
-mySQL database and/or other storages.
+This package implements capturing UDP datagrams, parsing,
+and saving to mySQL database and/or other storages.
+The package is meant to process UDP datagrams that contain data
+in a form of serialized dictionaries e.g.:
 
-# Suported storages:
+key1=value1,key2=value2,...
+
+where values should generally be floating point values, but it can 
+also be used with arbitrary datagram formats by employing regular
+expressions.
+
+# Suported output backend storages:
 
  * mySQL
  * redis
- * files
+ * text files
+ * MLflow (planned)
 
-
-# DOWNLOAD
+# Download
 
 ```sh
 git clone https://github.com/bslew/RT32netlog.git
 ```
 
-# BUILD & INSTALL
+# Build & Install
 ```sh
 cd RT32netlog
 python3 -m venv venv

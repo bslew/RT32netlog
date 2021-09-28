@@ -207,7 +207,10 @@ def bin_list_dict_vals(data,dtavg,how='mean'):
     for entry in data:
         for k,v in entry.items():
             if k=='dt':
-                d[k].append(datetime.datetime.strptime(v,"%Y-%m-%d %H:%M:%S"))
+                if '.' in v:
+                    d[k].append(datetime.datetime.strptime(v,"%Y-%m-%d %H:%M:%S.%f"))
+                else:
+                    d[k].append(datetime.datetime.strptime(v,"%Y-%m-%d %H:%M:%S"))
 #                 print(v)
 #                 print(d[k])
             else:
