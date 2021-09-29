@@ -126,9 +126,161 @@ Of course the password needs to be set, and file access rights set to 600
 
 `chmod 600 ~/.RT32netlog.ini`
 
+# Use Examples
+## Example 1 - data averaging and forwarding
+
+Suppose the incoming datagrams have format:
+```sh
+2021 9 28 10 31 41 888523 2000.000 2459485.938679 271 44139.483510 -24.9975 0.0007 183.9150 53.0948 0 1 -0.0100 0.0100 0.0000 0.0000 -0 -0 -0 0 70 0 0 0 0 0 0 -25.0000 0.0000 344.2920 62.1476 13415
+```
+and arrive several times per second.
+We wish to extract julian day (the 9'th word), ammed it with
+apropriate key - "JD" and average the incoming UDP stream
+in timescales of 2 seconds and redistribute it to another port.
+This can be done using the following configuration block:
+
+```sh
+.netlog.ini file
+# Datagram average and forward example
+[TEST_FWD]
+# listen on port
+udp_port = 3493
+# and interface
+udp_ip = 192.168.1.255
+
+# First let's pre-process the input datagram using regular expressions.
+# We use input_resub option which should specify a list of lists of length
+# two. The first element should specify regular expression for 
+# the pattern to be sought in the input datagram string and 
+# the second element should specify regex for its replacement.
+# Escape characters '\' should be used for back-references e.g. \1
+input_resub=[ ["^(?:\\S+ ){8}(\\S+).*", "JD=\\1"] ]
+
+# After pre-processing the incoming UDP datagram, 
+# search for the required keys
+required_keys = ["JD"]
+
+# Define how these keys should be mapped - i.e. specify their
+# target names
+# (these names are also used for mySQL and redis if used)
+db_keys = ["JD"]
+
+# If output to redis database is also requested then uncomment
+#saveToRedis = True
+
+# Finally, perform 2-s averaging of the preprocessed input and 
+# resubmit the input to a different host and port
+averaging_interval=2
+resend_output_to_host=127.0.0.1
+resend_output_to_port=10000
+
+
+# The output datagram sent to port 10000 will look something 
+# like this:
+#
+# JD=2459485.962054424,dt=2021-09-28 11:05:21.717967,
+# 
+# and will be emitted roughly every two seconds as requested.
+# Each datagram of the package is ammended with additional
+# dt key that contains UTC date and time of the UDP datagram
+# arrival (or as in this case the mean date and time calculated
+# over dates and times of all datagrams that came within the 
+# averaging time scale (here 2 seconds).
+
+
+```
+
+In order to use this configuration we need to run:
+
+```sh
+python3 python/services/save-UDPdata-generic-module.py -m TEST_FWD --serverUDP -c path/to/configuration/file.ini
+```
+
+## Example 2 - regular expressions
+We assume the same input datagrams format as in example 1.
+This time we are interested in two values in the datagrams:
+the one on position 11 and 12 counting from 0.
+
+```sh
+.netlog.ini file
+[TEST_RTAZ]
+
+# listen on port
+udp_port = 3493
+# and interface
+udp_ip = 192.168.1.255
+
+# We pre-process the input datagram using the below list of patterns
+# and replacements,
+# and name the selected columns with keys "AZtrue" and "ZDtrue".
+# The input_resub option is a list of [PATTERN,REPL]
+# where PATTERN,REPL are fed directly to re.sub python function as
+# re.sub(PATTERN, REPL, udp_string)
+input_resub=[ ["^(?:\\S+ ){11}(\\S+) (\\S+).*", "AZtrue=\\1,ZDtrue=\\2"] ]
+
+# search for the required keys in the incoming UDP datagram
+required_keys = ["AZtrue","ZDtrue"]
+
+# The datagram keys are mapped to mysql table column names as
+# (these names are also used for redis)
+db_keys = ["AZtrue","ZDtrue"]
+
+# The key names can be prefixed using namespace 
+# redisNamespace = rt4_control
+# If output to redis database is also requested then
+#saveToRedis = True
+
+
+# averaging interval in seconds
+# If this is not given then resend_output* options can still be used
+# and in this case the non-averaged version of the output datagram
+# is sent. Note that saveToRedis and saveToDB options store
+# the output version of the data (here, pre-processed and averaged).
+averaging_interval=1
+resend_output_to_host=127.0.0.1
+resend_output_to_port=10000
+```
+
+Similarly to example 1 this configuration is run with:
+
+```sh
+python3 python/services/save-UDPdata-generic-module.py -m TEST_RTAZ --serverUDP -c path/to/configuration/file.ini
+```
+
+## Example 3 - alarms (experimentall)
+
+One can set email notifications if given value crosses specified
+thresholds. E.g.
+
+
+```sh
+.netlog.ini file
+##############################################################
+##############################################################
+##############################################################
+[TEST_ALARM]
+
+# listen on port
+udp_port = 10000
+# and interface
+udp_ip = 127.0.0.1
+
+# search for the required keys in the incoming UDP datagram
+required_keys = ["T"]
+
+# The datagram keys are mapped to mysql table column names as
+# (these names are also used for redis)
+db_keys = ["T"]
+
+alarm_on = [ ["T", ">", "30" ], ["T", "<", "15" ] ]
+alarm_email= ["xxx@yyy.zzz"]
+```
+
+
 
 ### Other examples
-Check [etc/netlog.ini](etc/netlog.ini) for more examples, showing how to save to redis, files,
+Check [etc/netlog.ini](etc/netlog.ini) for more examples, 
+or use cases showing how to save to redis, files,
 resend data to other ports or average datagrams on selected time scales,
 or even apply regular expressions.
 

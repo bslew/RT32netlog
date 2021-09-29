@@ -53,6 +53,7 @@ class RT32netlogParser(configparser.ConfigParser):
     def __init__(self):
         super().__init__()
 #         list_keys=['db_keys']
+        self.set('DEFAULT','db_keys',json.dumps('[]'))
         self.set('DEFAULT','saveToRedis','False')
         self.set('DEFAULT','saveToDB','False')
         self.set('DEFAULT','saveToFile','False')
