@@ -38,6 +38,14 @@ def save_to_redis(rcon, data_dict,logger=None):
     rcon['con'].ltrim(rcon['pref']+'::last::_raw',0,int(N)-1)
 
 
+# def fetch_value_from_redis(rcon,key):
+#     '''
+#     '''
+#     return rcon['con'].
+#
+
+    
+
 def fetch_from_redis(rcon, key='_raw',from_idx=0,to_idx=-1):
     '''
         returns
@@ -308,10 +316,10 @@ def merge_two_dicts(x, y):
 
 
 class sqldb:
-    def __init__(self,host,port,dbname,table,user,passwd, cols=[], **kwargs):
+    def __init__(self,host,port,db,table,user,passwd, cols=[], **kwargs):
         self.host=host
         self.port=port
-        self.dbname=dbname
+        self.dbname=db
         self.table=table
         self.user=user
         self.passwd=passwd
@@ -339,7 +347,8 @@ class sqldb:
         except MySQLdb.Error as e:
             self.logger.error("Cannot connect to mySQL db (host: {}, user: {}, db: {})".format(self.host, self.user,self.dbname))
             self.logger.error(e)
-        
+            self.db=None
+            
     def connected(self):
         if self.db==None:
             return False
@@ -446,6 +455,7 @@ class sqldb:
             self.logger.error('Cannot store to mySQL db')
             self.logger.error(str(sys.exc_info()[1]))
 
+            self.connect()
             if self.connected():
                 self.db.rollback()
             else:

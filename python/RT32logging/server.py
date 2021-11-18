@@ -6,6 +6,7 @@ Created on Jan 20, 2020
 from socket import *
 import datetime
 import sys,os
+import threading
 import json
 import redis
 '''
@@ -141,7 +142,7 @@ def startServerUDP(cfg,moduleName,args,datagramConverter,log,**kwargs):
 
     if args.saveToDB:
         
-        db = storage.FocusBoxMeteo_sqldb(host=cfg['DB']['host'], port=cfg['DB']['port'],
+        db = storage.sqldb(host=cfg['DB']['host'], port=cfg['DB']['port'],
                          db=cfg['DB']['db'],table=cfg[moduleName]['table'],
                          user=cfg['DB']['user'], 
                          passwd=cfg['DB']['passwd'],
@@ -198,13 +199,23 @@ def startServerUDP(cfg,moduleName,args,datagramConverter,log,**kwargs):
             UDPdatagrams.alarmCheck(readout,cfg,moduleName).execute()
             
             
+            '''
+            The below "saving" part should be done in sub-processes
+            in case some storage operation takes long time, or cannot
+            be finished quickly (e.g. mysql backups that block db).
+            '''
             
             if args.saveToFile:
                 storage.save_to_file(args.outfile,readout,log)
             if args.saveToRedis:
                 storage.save_to_redis(redis_con,readout,log)
             if args.saveToDB:
-                db.store(readout)
+                # db.store(readout)
+                # print(readout)
+                try:
+                    threading.Thread(target=db.store,args=[readout]).start()
+                except:
+                    raise
         else:
             if args.verbose:
                 log.error('Bad datagram: ')
