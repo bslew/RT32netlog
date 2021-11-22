@@ -39,8 +39,8 @@ def UDPserver(host,port,log,dgram_converter,**kwargs):
 
     resend_output=True
 #     print('averaging_interval',cfg[moduleName].getint('averaging_interval',None))
-    if cfg[moduleName].getint('averaging_interval',None)==None:
-        resend_output=False
+    # if cfg[moduleName].getint('averaging_interval',None)==None:
+    #     resend_output=False
     if resend_output_to_port==None:
         resend_output=False
     
