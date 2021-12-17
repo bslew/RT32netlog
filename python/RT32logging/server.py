@@ -53,7 +53,8 @@ def UDPserver(host,port,log,dgram_converter,**kwargs):
         (data, addr) = s.recvfrom(128*1024)
         if args.verbose>2:
             print('datagram:',data)
-        readout,status=dgram_converter(data,keys['required'],keys['target'],input_resub=input_resub)
+        readout,status=dgram_converter(data,keys['required'],keys['target'],input_resub=input_resub,
+                                       **kwargs)
 #        s.sendto(data, (host, int(port)))
     
 
@@ -195,7 +196,8 @@ def startServerUDP(cfg,moduleName,args,datagramConverter,log,**kwargs):
             '''
             check values if needed
             '''
-            print(readout)
+            if args.verbose>2:
+                print(readout)
             UDPdatagrams.alarmCheck(readout,cfg,moduleName).execute()
             
             
@@ -217,7 +219,7 @@ def startServerUDP(cfg,moduleName,args,datagramConverter,log,**kwargs):
                 except:
                     raise
         else:
-            if args.verbose:
+            if args.verbose>2:
                 log.error('Bad datagram: ')
                 log.error(','.join(x for x in status['comments']))
     

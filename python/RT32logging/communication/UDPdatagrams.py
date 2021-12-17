@@ -72,7 +72,7 @@ def convert_UDP_datagram_focus_cabin(data):
     
     return d
 
-def convert_UDP_datagram(data,required_keys, output_keys, input_resub=None):
+def convert_UDP_datagram(data,required_keys, output_keys, input_resub=None, **kwargs):
     '''
     convert data string to key value dictionary
     The function checks if all required keys are present
@@ -98,12 +98,22 @@ def convert_UDP_datagram(data,required_keys, output_keys, input_resub=None):
     present_keys=[]
     missing_keys=[]
     status={'result': True, 'comments' :[] }
+    verb=0
+    if 'args' in kwargs.keys():
+        verb=kwargs['args'].verbose
+        # print(verb)
 
     data=data.decode() if isinstance(data,bytes) else data
 
+    if verb>3:
+        print('data "{}"'.format(data))
     if input_resub!=None:
         for p,r in input_resub:
-            data=re.sub(r'%s' % p,r'%s' % r,data)
+            if verb>3:
+                print(p,r)
+            data=re.sub(r'%s' % p,r'%s' % r,data,1)
+            if verb>3:
+                print(data)
 
     data=commons.strip_white_spaces(data)
 
@@ -143,7 +153,8 @@ def convert_UDP_datagram(data,required_keys, output_keys, input_resub=None):
         status['comments'].append('Missing keys: '+','.join(x for x in missing_keys))
         status['result']=False
     
-    
+    if verb>3:
+        print(d)    
     return d,status
 
 def verify_UDP_datagram_dict(d):
